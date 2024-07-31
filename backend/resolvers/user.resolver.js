@@ -44,17 +44,54 @@ const userResolver = {
     }
 ,
     login: async (_,{input},context)=>{
+      try {
+         const {username , password} = input;
+         const{user} = await context.authenticate("graphql-local",{username,password})
 
+         await context.login(user)
+         return user;
+      } catch (err) {
+        console.log("Error in login: " , err)
+        throw new Error(err.message || "internal server error")
+      }
+
+    },
+    logout:async(_,context)=>{
+      try {
+        await context.logout();
+        req.session.destroy((err)=>{
+          if(err) throw err
+        })
+        res.clearCookie("connect.id")
+        return {message:"Logged out successfully"}
+      } catch (err) {
+        console.log("Error in logout: " ,err)
+        throw new Error(err.message || "Internal server error")
+      }
     }
   },
   Query: {
-    users: (_, { req, res }) => {
-      return users;
+    authUser:async(_, context)=>{
+     try {
+       const user = await context.getUser()
+       return user ;
+     } catch (err) {
+      console.error("Error in authUser: ", err )
+      throw new Error("Internal server error")
+     }
+
     },
-    user: (_, { userId }) => {
-      return users.find((user) => user._id === userId);
+    user: async(_, { userId }) => {
+    try {
+      const user = await User.findById(userId);
+      return user
+    } catch (err) {
+      console.error("Error in user: " ,err)
+      throw new Error(err.message || "Internal server error")
+    }
     },
   },
+  // TODO => ADD User/Transaction Relation
 };
 
 export default userResolver;
