@@ -1,4 +1,4 @@
-import { users } from "../dummyData/data.js";
+import Transaction from "../models/transaction.model.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs"
 const userResolver = {
@@ -45,24 +45,25 @@ const userResolver = {
 ,
     login: async (_,{input},context)=>{
       try {
-         const {username , password} = input;
-         const{user} = await context.authenticate("graphql-local",{username,password})
+				const { username, password } = input;
+				if (!username || !password) throw new Error("All fields are required");
+				const { user } = await context.authenticate("graphql-local", { username, password });
 
-         await context.login(user)
-         return user;
-      } catch (err) {
-        console.log("Error in login: " , err)
-        throw new Error(err.message || "internal server error")
-      }
+				await context.login(user);
+				return user;
+			} catch (err) {
+				console.error("Error in login:", err);
+				throw new Error(err.message || "Internal server error");
+			}
 
     },
     logout:async(_,__,context)=>{
       try {
         await context.logout();
-        req.session.destroy((err)=>{
+        context.req.session.destroy((err)=>{
           if(err) throw err
         })
-        res.clearCookie("connect.id")
+        context.res.clearCookie("connect.id")
         return {message:"Logged out successfully"}
       } catch (err) {
         console.log("Error in logout: " ,err)
@@ -84,14 +85,25 @@ const userResolver = {
     user: async(_, { userId }) => {
     try {
       const user = await User.findById(userId);
-      return user
+      return user;
     } catch (err) {
       console.error("Error in user: " ,err)
       throw new Error(err.message || "Internal server error")
     }
     },
   },
-  // TODO => ADD User/Transaction
+ User:{
+  transactions: async(parent,_,__)=>{
+    try {
+      const transactions = await Transaction.find({userId: parent._id})
+      return transactions;
+    } catch (err) {
+      console.log("Error in user.transaction Resolver: ",err)
+      throw new Error(err.message || "Internal server Error")
+      
+    }
+  }
+ }
 };
 
 export default userResolver;
