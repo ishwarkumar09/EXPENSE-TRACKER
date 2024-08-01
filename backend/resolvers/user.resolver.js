@@ -56,7 +56,7 @@ const userResolver = {
       }
 
     },
-    logout:async(_,context)=>{
+    logout:async(_,__,context)=>{
       try {
         await context.logout();
         req.session.destroy((err)=>{
@@ -71,7 +71,7 @@ const userResolver = {
     }
   },
   Query: {
-    authUser:async(_, context)=>{
+    authUser:async(_,__,context)=>{
      try {
        const user = await context.getUser()
        return user ;
@@ -91,7 +91,7 @@ const userResolver = {
     }
     },
   },
-  // TODO => ADD User/Transaction Relation
+  // TODO => ADD User/Transaction
 };
 
 export default userResolver;
